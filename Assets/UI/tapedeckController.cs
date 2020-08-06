@@ -33,10 +33,14 @@ public class tapedeckController : MonoBehaviour {
     public Vector2 tapedeckDown;
     public float slideTriggerY;
     public float tapeDeckSlideSpeed;
+    public float minOpacity;
 
     [Header("Else")]
-    public EnemySongNotifier enemyController;
+    public EnemyGroupController enemyController;
 
+    private bool isPaused = false;
+    private bool wasPlaying = false;
+    private CanvasGroup alphaControl;
     private AudioClip currentSong;
     private RectTransform tapedeckTransform;
     private TapeColor currentTape = TapeColor.empty;
@@ -48,6 +52,7 @@ public class tapedeckController : MonoBehaviour {
         ejectButton.onClick.AddListener(UnloadTape);
 
         tapedeckTransform = this.GetComponent<RectTransform>();
+        alphaControl = this.GetComponent<CanvasGroup>();
         tapeDeckPos = tapedeckDown;
     }
 
@@ -55,11 +60,16 @@ public class tapedeckController : MonoBehaviour {
     private bool isRewinding = false;
     private bool isPlaying = false;
     void Update(){
-        if (Input.mousePosition.y < slideTriggerY)
-            tapedeckTransform.localPosition = Vector2.MoveTowards(new Vector2(tapedeckTransform.localPosition.x, tapedeckTransform.localPosition.y), tapedeckUp, tapeDeckSlideSpeed * Time.deltaTime);
-        if (Input.mousePosition.y > slideTriggerY)
-            tapedeckTransform.localPosition = Vector2.MoveTowards(new Vector2(tapedeckTransform.localPosition.x, tapedeckTransform.localPosition.y), tapedeckDown, tapeDeckSlideSpeed * Time.deltaTime);
+        if (isPaused) return;
 
+        if (Input.mousePosition.y < slideTriggerY && (Vector2)tapedeckTransform.localPosition != tapedeckUp) {
+            tapedeckTransform.localPosition = Vector2.MoveTowards(new Vector2(tapedeckTransform.localPosition.x, tapedeckTransform.localPosition.y), tapedeckUp, tapeDeckSlideSpeed * Time.deltaTime);
+            alphaControl.alpha = ((1 - (Vector2.Distance(tapedeckTransform.localPosition, tapedeckUp) / Vector2.Distance(tapedeckDown, tapedeckUp))) * minOpacity) + (1 - minOpacity);
+        }
+        if (Input.mousePosition.y > slideTriggerY && (Vector2)tapedeckTransform.localPosition != tapedeckDown) {
+            tapedeckTransform.localPosition = Vector2.MoveTowards(new Vector2(tapedeckTransform.localPosition.x, tapedeckTransform.localPosition.y), tapedeckDown, tapeDeckSlideSpeed * Time.deltaTime);
+            alphaControl.alpha = ((Vector2.Distance(tapedeckTransform.localPosition, tapedeckDown) / Vector2.Distance(tapedeckDown, tapedeckUp)) * minOpacity) + (1 - minOpacity);
+        }
 
         if (isPlaying) {
             if (audioSrc.time > tapeTime[currentTape]){
@@ -190,5 +200,20 @@ public class tapedeckController : MonoBehaviour {
         pauseButton.interactable = true;
         rewindButton.interactable = true;
         ejectButton.interactable = true;
+    }
+
+    public void Pause() {
+        isPaused = true;
+
+        if (audioSrc.isPlaying) {
+            audioSrc.Pause();
+            wasPlaying = true;
+        }
+    }
+
+    public void Resume() {
+        isPaused = false;
+        if (wasPlaying)
+            audioSrc.Play();
     }
 }

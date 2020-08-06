@@ -10,7 +10,7 @@ public class EnemyModel : MonoBehaviour
     public float speed = 50f;
     public Vector2 mapChunk;
     public Vector2 aspectRatio = new Vector2(16, 9);
-    public EnemySongNotifier notifier;
+    public EnemyGroupController notifier;
     public EnemyAttackCheck attackBox;
     public float attackWait = 1f;
 
@@ -23,13 +23,22 @@ public class EnemyModel : MonoBehaviour
     internal bool isAngered;
     internal Vector2 direction = new Vector2(0, 0);
     internal float lastAttack = 0f;
-    public virtual void Start(){
+    internal bool isPaused = false;
+    internal float oldSpeed = 0f;
+
+    public virtual void InheretedStart() { }
+    public virtual void InheretedUpdate() { }
+    public void Start(){
         animator = this.GetComponent<Animator>();
         enemyRB = this.GetComponent<Rigidbody2D>();
         notifier.RegisterEnemy(this, mapChunk);
+
+        InheretedStart();
     }
 
-    public virtual void Update(){
+    public void Update(){
+        if (isPaused) return;
+
         if (moving && !isSoothed && !attackBox.playerInRange) {
             var targetPos = isAngered ? (Vector2)notifier.playerPosition.position : moveTo;
 
@@ -52,6 +61,8 @@ public class EnemyModel : MonoBehaviour
             notifier.playerControl.Damage(1);
             lastAttack = Time.time;
         }
+
+        InheretedUpdate();
     }
 
     internal void MoveTo(Vector2 position, float speed) {
@@ -92,6 +103,18 @@ public class EnemyModel : MonoBehaviour
     }
 
     public void EnemyDie() {
+        notifier.DestroyEnemy(this, mapChunk);
         Destroy(this.gameObject);
+    }
+
+    public void Pause() {
+        isPaused = true;
+        oldSpeed = animator.speed;
+        animator.speed = 0;
+    }
+
+    public void Resume() {
+        animator.speed = animator.speed;
+        isPaused = false;
     }
 }

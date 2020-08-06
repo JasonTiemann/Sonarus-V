@@ -11,13 +11,9 @@ public class RedEnemy : EnemyModel
 
     private int currentPosition = 0;
     private float moveTime = 0f;
-    //public override void Start() {
-    //    base.Start();
-    //}
-    private bool hasWaited = false;
-    public override void Update(){
-        base.Update();
 
+    private bool hasWaited = false;
+    public override void InheretedUpdate(){
         if (!moving) {
             if (!hasWaited){
                 moveTime = Time.time + pauseFor;
